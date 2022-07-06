@@ -1,34 +1,107 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 깃허브 페이지에 React && Next.js 프로젝트 배포하기
 
-## Getting Started
+## 1. `next.js` 프로젝트 생성
 
-First, run the development server:
+## 2. `package.json` 파일 작성
 
-```bash
-npm run dev
-# or
-yarn dev
+- `homepage` Url 추가
+- build 명령어에 `export` 추가
+- `deploy` 명령어 추가
+
+1. `next build` : next 프로젝트 빌드하고 ,static html앱으로 컴파일한 out/ 폴더를 생성해 줌
+2. `touch out/.nojekyll` : Github page의 jekyll 처리과정에서 \_next 이러한 파일을 특수 리소스로 간주하고 최종 사이트에 복사하지 않는데 .nojekyll 파일을 만들면 이를 막을 수 있다.
+3. `git add -f out/` : git add, out폴더가 gitignore에 포함되어 있어서 강제로 add
+4. `git commit -m` : 커밋메시지 작성
+5. `git subtree push —prefix out origin gh-pages` : github 저장소 gh-pages브랜치에 push
+
+```json
+{
+  "name": "react-nextjs-deploy",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "http://nostrss.github.io/react-nextjs-deploy", // homepage 추가
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build && next export", // export 추가
+    "start": "next start",
+    "lint": "next lint",
+    // deploy 추가
+    "deploy": "next build && next export && touch out/.nojekyll && git add -f out/ && git commit -m 'deploy to gh-pages' && git subtree push --prefix out origin gh-pages"
+  },
+  "dependencies": {
+    "next": "12.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "babel-plugin-transform-define": "^2.0.1",
+    "eslint": "8.19.0",
+    "eslint-config-next": "12.2.0",
+    "gh-pages": "^4.0.0"
+  }
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 3. `next.config.js` 파일 작성
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+```javascript
+/** @type {import('next').NextConfig} */
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+const debug = process.env.NODE_ENV !== 'production';
+const repository = 'react-nextjs-deploy';
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+const nextConfig = {
+  reactStrictMode: true,
+  assetPrefix: !debug ? `/${repository}/` : '', // production 일때 prefix 경로
+  trailingSlash: true, // 빌드 시 폴더 구조 그대로 생성하도록
+};
 
-## Learn More
+module.exports = nextConfig;
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 4. `env-config.js` 파일 작성
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- 배포 후 img 등의 리소스에 접근하기 위해서 하는 작업
+- 아래와 같이 세팅 해두면 프로젝트 어디에서든 앞에 `process.env.BACKEND_URL`을 추가해주면 prefix 값으로 ''(로컬일때) 또는 배포된 리소스 경로를 알아서 연결할 수 있다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+```javascript
+const debug = process.env.NODE_ENV !== 'production';
+const repository = 'react-nextjs-deploy';
 
-## Deploy on Vercel
+module.exports = {
+  'process.env.BACKEND_URL': !debug ? `/${repository}` : '',
+};
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 5. `.babelrc.js` 파일 작성, `babel-plugin-transform-define` 설치
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- 4번의 env-config.js 파일이 제대로 작동하기 위해 필요한 파일(?)
+
+```javascript
+const env = require('./env-config');
+
+module.exports = {
+  presets: ['next/babel'],
+  plugins: [['transform-define', env]],
+};
+```
+
+- `babel-plugin-transform-define` 설치
+  https://www.npmjs.com/package/babel-plugin-transform-define
+
+## 6. pages > index.js 파일의 Next.js Image 태그 영역 수정
+
+- `Next.js`의 `Image` 태그는 `Html`의 `img` 태그와는 조금 다르므로 수정(안하면 빌드 에러 날지도)
+- `src`에 위에 설정한 `prefix`를 불러오기 위해 `process.env.BACKEND_URL` 추가
+
+```html
+<img src={process.env.BACKEND_URL + '/vercel.svg'} alt='Vercel Logo' width={72}
+height={16} />
+```
+
+## 7. git 레파지토리 생성 및 연결하기
+
+## 8. 배포
+
+> yarn deploy
+> 빌드 후 out폴더의 정적파일이 업로드 됨

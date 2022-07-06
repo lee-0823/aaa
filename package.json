@@ -2,11 +2,13 @@
   "name": "react-nextjs-deploy",
   "version": "0.1.0",
   "private": true,
+  "homepage": "http://nostrss.github.io/react-nextjs-deploy",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "next build && next export && touch out/.nojekyll && git add -f out/ && git commit -m 'deploy to gh-pages' && git subtree push --prefix out origin gh-pages"
   },
   "dependencies": {
     "next": "12.2.0",
@@ -14,7 +16,9 @@
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-define": "^2.0.1",
     "eslint": "8.19.0",
-    "eslint-config-next": "12.2.0"
+    "eslint-config-next": "12.2.0",
+    "gh-pages": "^4.0.0"
   }
 }
