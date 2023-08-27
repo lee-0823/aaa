@@ -2,7 +2,7 @@
   "name": "react-nextjs-deploy",
   "version": "0.1.0",
   "private": true,
-  "homepage": "http://nostrss.github.io/react-nextjs-deploy",
+  "homepage": "https://lee-0823.github.io/aaa",
   "scripts": {
     "dev": "next dev",
     "build": "next build && next export",

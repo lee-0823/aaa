@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const debug = process.env.NODE_ENV !== 'production';
-const repository = 'react-nextjs-deploy';
+const repository = 'aaa';
 
 const nextConfig = {
   reactStrictMode: true,
